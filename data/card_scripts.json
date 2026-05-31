@@ -1,0 +1,1535 @@
+[
+  {
+    "card_id": "132a",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "GO_SOLO"
+      }
+    ],
+    "onDefeated": [
+      {
+        "action": "Mill",
+        "n": 3
+      },
+      {
+        "action": "RecoverFromTrash",
+        "target": {
+          "bind": "prog",
+          "type": "CardRef",
+          "zone": "trash",
+          "filter": {
+            "type": "Program",
+            "subtype_has": "Braindance"
+          },
+          "chooser": "controller"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "131",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "GO_SOLO"
+      },
+      {
+        "kind": "SelfPower",
+        "expr": {
+          "op": "mul",
+          "args": [
+            2,
+            {
+              "op": "gear_count"
+            }
+          ]
+        },
+        "when": {
+          "active_player": "self"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α001",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "controller",
+          "card": {
+            "faction": "Arasaka"
+          },
+          "rate_limit": "first_per_turn",
+          "rate_limit_scope": "controller"
+        },
+        "effect": [
+          {
+            "action": "Draw",
+            "n": 1
+          },
+          {
+            "action": "If",
+            "cond": {
+              "cond": "StreetCred",
+              "op": "<",
+              "value": 20
+            },
+            "then": [
+              {
+                "action": "Discard",
+                "n": 1,
+                "target": {
+                  "bind": "card",
+                  "type": "CardRef",
+                  "zone": "hand",
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α003",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "GO_SOLO"
+      }
+    ]
+  },
+  {
+    "card_id": "α004",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "GO_SOLO"
+      },
+      {
+        "kind": "SelfKeyword",
+        "keyword": "BLOCKER"
+      }
+    ]
+  },
+  {
+    "card_id": "α005",
+    "statics": [
+      {
+        "kind": "Aura",
+        "affects": {
+          "side": "friendly",
+          "filter": {
+            "type": "Unit",
+            "faction": "Arasaka"
+          }
+        },
+        "expr": 1,
+        "when": {
+          "role": "attacker"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α006",
+    "onFlip": [
+      {
+        "action": "SearchTopN",
+        "n": 5,
+        "take_up_to": 2,
+        "filter": {
+          "type": "Gear",
+          "cost_lte": 2
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α002",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnCardPlayed",
+          "by": "controller",
+          "card": {
+            "color": "Blue",
+            "any_of": [
+              {
+                "type": "Unit"
+              },
+              {
+                "type": "Gear"
+              }
+            ]
+          },
+          "rate_limit": "first_per_turn",
+          "rate_limit_scope": "controller"
+        },
+        "effect": [
+          {
+            "action": "Optional",
+            "body": [
+              {
+                "action": "IncreaseGig",
+                "target": {
+                  "bind": "gig",
+                  "type": "Gig",
+                  "side": "friendly",
+                  "chooser": "controller",
+                  "optional": true
+                },
+                "amount": 2
+              },
+              {
+                "action": "If",
+                "cond": {
+                  "cond": "GigAtMaxValue",
+                  "ref": "gig"
+                },
+                "then": [
+                  {
+                    "action": "Draw",
+                    "n": 1
+                  }
+                ]
+              }
+            ],
+            "prompt": "Jackie: Increase a friendly gig by 2?"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "032",
+    "onCall": [
+      {
+        "action": "Ready",
+        "target": {
+          "from_self": true
+        }
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "spend_activated",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "controller"
+        },
+        "prompt": "Spend Panam to equip a Gear to the attacking unit and ready it?",
+        "cost": {
+          "spend": {
+            "from_self": true
+          }
+        },
+        "effect": [
+          {
+            "action": "Equip",
+            "source": {
+              "bind": "gear",
+              "type": "Gear",
+              "equipped_to": {
+                "from_self": true
+              },
+              "chooser": "controller"
+            },
+            "dest": {
+              "from_trigger_source": true,
+              "bind": "host"
+            }
+          },
+          {
+            "action": "Ready",
+            "target": {
+              "from_binding": "host"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "121",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "GO_SOLO"
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnStealGigs",
+          "by": "self"
+        },
+        "effect": [
+          {
+            "action": "Optional",
+            "body": [
+              {
+                "action": "RemoveFromGame",
+                "target": {
+                  "from_self": true,
+                  "bind": "rfg_done"
+                }
+              }
+            ]
+          },
+          {
+            "action": "If",
+            "cond": {
+              "cond": "BindingSet",
+              "name": "rfg_done"
+            },
+            "then": [
+              {
+                "action": "PlayFromZone",
+                "target": {
+                  "bind": "prog",
+                  "type": "CardRef",
+                  "zone": "trash",
+                  "filter": {
+                    "type": "Program"
+                  },
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "122",
+    "onCall": [
+      {
+        "action": "AdjustGig",
+        "target": {
+          "bind": "gig",
+          "type": "Gig",
+          "side": "opponent",
+          "chooser": "controller"
+        },
+        "amount": -3
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "spend_activated",
+        "trigger": {
+          "event": "Anytime"
+        },
+        "prompt": "Spend Evelyn to search top 3 of your deck for a Braindance Program?",
+        "cost": {
+          "spend": {
+            "from_self": true
+          }
+        },
+        "effect": [
+          {
+            "action": "SearchTopN",
+            "n": 3,
+            "take_up_to": 1,
+            "filter": {
+              "type": "Program",
+              "subtype_has": "Braindance"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "125",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "BLOCKER"
+      }
+    ],
+    "onCall": [
+      {
+        "action": "Ready",
+        "target": {
+          "from_self": true
+        }
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "spend_activated",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "opponent"
+        },
+        "prompt": "Spend Goro to give a friendly Unit (cost ≤4) +1 power and BLOCKER this turn?",
+        "cost": {
+          "spend": {
+            "from_self": true
+          }
+        },
+        "condition": {
+          "cond": "HasSidedPair",
+          "side": "friendly"
+        },
+        "effect": [
+          {
+            "action": "GrantTempPower",
+            "target": {
+              "bind": "unit",
+              "type": "Unit",
+              "side": "friendly",
+              "filter": {
+                "cost_lte": 4
+              },
+              "chooser": "controller"
+            },
+            "amount": 1
+          },
+          {
+            "action": "GrantTempKeyword",
+            "target": {
+              "from_binding": "unit"
+            },
+            "keyword": "BLOCKER"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "133",
+    "onCall": [
+      {
+        "action": "Optional",
+        "body": [
+          {
+            "action": "DefeatGear",
+            "target": {
+              "bind": "gear",
+              "type": "Gear",
+              "side": "friendly",
+              "chooser": "controller"
+            }
+          }
+        ]
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "BindingSet",
+          "name": "gear"
+        },
+        "then": [
+          {
+            "action": "Draw",
+            "n": 4
+          }
+        ],
+        "else": [
+          {
+            "action": "Draw",
+            "n": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "135",
+    "onCall": [
+      {
+        "action": "Draw",
+        "n": 1
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "spend_activated",
+        "trigger": {
+          "event": "OnCardAttacks"
+        },
+        "prompt": "Spend River Ward to equip a Gear (cost ≤2) from your hand to a friendly Yellow Unit with no Gear?",
+        "cost": {
+          "spend": {
+            "from_self": true
+          }
+        },
+        "effect": [
+          {
+            "action": "Equip",
+            "source": {
+              "bind": "gear",
+              "type": "Gear",
+              "zone": "hand",
+              "filter": {
+                "cost_lte": 2
+              },
+              "chooser": "controller"
+            },
+            "dest": {
+              "bind": "host",
+              "type": "Unit",
+              "side": "friendly",
+              "filter": {
+                "color": "Yellow",
+                "gear_count": 0
+              },
+              "chooser": "controller"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "N001"
+  },
+  {
+    "card_id": "067",
+    "abilities": [
+      {
+        "kind": "spend_activated",
+        "trigger": {
+          "event": "Anytime"
+        },
+        "prompt": "Spend Kerry: if a gig is at max value, draw 2.",
+        "cost": {
+          "spend": {
+            "from_self": true
+          }
+        },
+        "condition": {
+          "cond": "HasInZone",
+          "zone": "gigs",
+          "filter": {
+            "value_eq_sides": true
+          }
+        },
+        "effect": [
+          {
+            "action": "Draw",
+            "n": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "069",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnGigValueChanged",
+          "by": "opponent"
+        },
+        "condition": {
+          "cond": "And",
+          "args": [
+            { "cond": "Compare",
+              "lhs": { "op": "event_field", "field": "gig_pid" },
+              "op":  "==",
+              "rhs": { "op": "self_pid" } },
+            { "cond": "Compare",
+              "lhs": { "op": "event_field", "field": "new_value" },
+              "op":  "<",
+              "rhs": { "op": "event_field", "field": "old_value" } }
+          ]
+        },
+        "effect": [
+          {
+            "action": "Optional",
+            "body": [
+              {
+                "action": "RecoverFromTrash",
+                "target": {
+                  "bind": "card",
+                  "type": "CardRef",
+                  "zone": "trash",
+                  "chooser": "controller",
+                  "optional": true
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α007",
+    "onPlay": [
+      {
+        "action": "If",
+        "cond": {
+          "cond": "StreetCred",
+          "op": ">=",
+          "value": 12
+        },
+        "then": [
+          {
+            "action": "Defeat",
+            "target": {
+              "bind": "unit",
+              "type": "Unit",
+              "side": "opponent",
+              "filter": {
+                "power_lte": 5
+              },
+              "chooser": "controller"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α008",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnStealGigs",
+          "by": "opponent"
+        },
+        "effect": [
+          {
+            "action": "If",
+            "cond": {
+              "cond": "SelfIsSpent"
+            },
+            "then": [
+              {
+                "action": "SetGigValue",
+                "target": {
+                  "from_event": "stolen_gigs"
+                },
+                "amount": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α009"
+  },
+  {
+    "card_id": "α011",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnStealGigs",
+          "by": "opponent"
+        },
+        "effect": [
+          {
+            "action": "If",
+            "cond": {
+              "cond": "SelfIsSpent"
+            },
+            "then": [
+              {
+                "action": "Draw",
+                "n": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α012",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "UNBLOCKABLE",
+        "condition": {
+          "cond": "StreetCred",
+          "op": ">=",
+          "value": 7
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α013",
+    "statics": [
+      {
+        "kind": "SelfPower",
+        "expr": {
+          "op": "mul",
+          "args": [
+            2,
+            {
+              "op": "gig_count",
+              "side": "self"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α014",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "BLOCKER"
+      },
+      {
+        "kind": "SelfKeyword",
+        "keyword": "CANNOT_ATTACK"
+      }
+    ]
+  },
+  {
+    "card_id": "α015"
+  },
+  {
+    "card_id": "α016",
+    "statics": [
+      {
+        "kind": "SelfKeyword",
+        "keyword": "BLOCKER"
+      },
+      {
+        "kind": "SelfKeyword",
+        "keyword": "CANNOT_ATTACK"
+      }
+    ]
+  },
+  {
+    "card_id": "α017"
+  },
+  {
+    "card_id": "α018",
+    "statics": [
+      {
+        "kind": "SelfPower",
+        "expr": {
+          "op": "legend_face_count",
+          "side": "friendly",
+          "face": "face_up"
+        },
+        "when": {
+          "active_player": "self"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "019",
+    "statics": [
+      {
+        "kind": "PowerMultiplier",
+        "factor": 2,
+        "when": {
+          "during_fight": true,
+          "role": "attacker"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "036",
+    "onDefeated": [
+      {
+        "action": "RivalDiscards",
+        "n": 1,
+        "bind": "first"
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "GigValueExists",
+          "side": "friendly",
+          "value": {
+            "op": "ref",
+            "name": "first.cost"
+          }
+        },
+        "then": [
+          {
+            "action": "RivalDiscards",
+            "n": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "042",
+    "onPlay": [
+      {
+        "action": "GrantTempKeyword",
+        "target": {
+          "from_self": true
+        },
+        "keyword": "HASTE_VS_SPENT"
+      }
+    ]
+  },
+  {
+    "card_id": "073",
+    "onPlay": [
+      {
+        "action": "Optional",
+        "body": [
+          {
+            "action": "Discard",
+            "n": 1,
+            "target": {
+              "bind": "prog",
+              "type": "CardRef",
+              "zone": "hand",
+              "filter": {
+                "type": "Program"
+              },
+              "chooser": "controller"
+            }
+          }
+        ]
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "BindingSet",
+          "name": "prog"
+        },
+        "then": [
+          {
+            "action": "BottomDeckFromField",
+            "target": {
+              "bind": "unit",
+              "type": "Unit",
+              "side": "opponent",
+              "chooser": "controller"
+            }
+          }
+        ]
+      }
+    ],
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "self"
+        },
+        "effect": [
+          {
+            "action": "Optional",
+            "body": [
+              {
+                "action": "Discard",
+                "n": 1,
+                "target": {
+                  "bind": "prog",
+                  "type": "CardRef",
+                  "zone": "hand",
+                  "filter": {
+                    "type": "Program"
+                  },
+                  "chooser": "controller"
+                }
+              }
+            ]
+          },
+          {
+            "action": "If",
+            "cond": {
+              "cond": "BindingSet",
+              "name": "prog"
+            },
+            "then": [
+              {
+                "action": "BottomDeckFromField",
+                "target": {
+                  "bind": "unit",
+                  "type": "Unit",
+                  "side": "opponent",
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "126",
+    "onPlay": [
+      {
+        "action": "RevealTop",
+        "n": 4,
+        "bind": "revealed"
+      },
+      {
+        "action": "SelectTarget",
+        "target": {
+          "bind": "gig",
+          "type": "Gig",
+          "side": "friendly",
+          "chooser": "controller"
+        },
+        "ui_context": {
+          "show_binding": "revealed",
+          "preview_filter": { "field": "cost", "op": "eq", "rhs": "gig_value" }
+        }
+      },
+      {
+        "action": "TakeFromBound",
+        "from": "revealed",
+        "filter": {
+          "cost_eq": {
+            "op": "gig_value",
+            "ref": "gig"
+          }
+        },
+        "trash_remainder": true
+      }
+    ]
+  },
+  {
+    "card_id": "137",
+    "onPlay": [
+      {
+        "action": "Defeat",
+        "target": {
+          "bind": "units",
+          "type": "Unit",
+          "side": "both",
+          "quantifier": "all",
+          "filter": {
+            "exclude_self": true
+          }
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α019"
+  },
+  {
+    "card_id": "α020",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnWinFight",
+          "by": "host"
+        },
+        "effect": [
+          {
+            "action": "Draw",
+            "n": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α022",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "host"
+        },
+        "effect": [
+          {
+            "action": "If",
+            "cond": {
+              "cond": "StreetCred",
+              "op": ">=",
+              "value": 7
+            },
+            "then": [
+              {
+                "action": "DefeatGear",
+                "target": {
+                  "bind": "gear",
+                  "type": "Gear",
+                  "side": "opponent",
+                  "filter": {
+                    "cost_lte": 2
+                  },
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α024",
+    "onPlay": [
+      {
+        "action": "GrantTempKeyword",
+        "target": {
+          "from_host": true
+        },
+        "keyword": "HASTE_VS_SPENT"
+      }
+    ]
+  },
+  {
+    "card_id": "α026",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnCardAttacks",
+          "by": "host"
+        },
+        "effect": [
+          {
+            "action": "MarkPeeked",
+            "target": {
+              "bind": "leg",
+              "type": "Legend",
+              "side": "friendly",
+              "face": "face_down",
+              "chooser": "controller"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α027",
+    "statics": [
+      {
+        "kind": "AuraKeyword",
+        "affects": {
+          "is": "equipped_host"
+        },
+        "keyword": "BLOCKER"
+      }
+    ]
+  },
+  {
+    "card_id": "111",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnStealGigs",
+          "by": "host",
+          "rate_limit": "first_per_turn",
+          "rate_limit_scope": "iid"
+        },
+        "effect": [
+          {
+            "action": "Optional",
+            "prompt": "Gorilla Arms: steal a rival gig with the same number of sides as one you just stole?",
+            "body": [
+              {
+                "action": "TransferGig",
+                "target": {
+                  "bind": "gig",
+                  "type": "Gig",
+                  "side": "opponent",
+                  "filter": {
+                    "sides": {
+                      "op": "event_field",
+                      "field": "stolen_gigs[*].sides"
+                    }
+                  },
+                  "chooser": "controller"
+                },
+                "to": "controller"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α021",
+    "onPlay": [
+      {
+        "action": "IncreaseGig",
+        "target": {
+          "bind": "gig",
+          "type": "Gig",
+          "side": "friendly",
+          "chooser": "controller"
+        },
+        "amount": 4
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "StreetCred",
+          "op": ">=",
+          "value": 7
+        },
+        "then": [
+          {
+            "action": "Draw",
+            "n": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "α023",
+    "onPlay": [
+      {
+        "action": "ReturnToHand",
+        "target": {
+          "bind": "unit",
+          "type": "Unit",
+          "side": "both",
+          "filter": {
+            "state": "spent",
+            "cost_lte": 4
+          },
+          "chooser": "controller"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α025",
+    "onPlay": [
+      {
+        "action": "Spend",
+        "target": {
+          "bind": "unit",
+          "type": "Unit",
+          "side": "opponent",
+          "filter": {
+            "cost_lte": 3
+          },
+          "chooser": "controller"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "α028",
+    "onPlay": [
+      {
+        "action": "GrantTempPower",
+        "target": {
+          "bind": "unit",
+          "type": "Unit",
+          "side": "friendly",
+          "chooser": "controller"
+        },
+        "amount": 4
+      },
+      {
+        "action": "ScheduleDefeat",
+        "target": {
+          "from_binding": "unit"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "102",
+    "interruptCast": "attack",
+    "onPlay": [
+      {
+        "action": "GrantTempPower",
+        "target": {
+          "bind": "unit",
+          "type": "Unit",
+          "side": "both",
+          "chooser": "controller",
+          "filter": {
+            "has_equipped_gear": true
+          }
+        },
+        "amount": {
+          "op": "mul",
+          "args": [
+            2,
+            {
+              "op": "gear_count",
+              "ref": "unit"
+            }
+          ]
+        }
+      },
+      {
+        "action": "ScheduleDefeat",
+        "target": {
+          "from_binding": "unit"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "116",
+    "onPlay": [
+      {
+        "action": "SelectTarget",
+        "target": {
+          "bind": "gig",
+          "type": "Gig",
+          "side": "opponent",
+          "chooser": "controller",
+          "prompt": "Choose an opponent gig"
+        }
+      },
+      {
+        "action": "ChooseAmount",
+        "bind_to": "delta",
+        "min": -2,
+        "max": 2,
+        "exclude_zero": true,
+        "chooser": "controller",
+        "prompt": "Adjust opponent gig by X"
+      },
+      {
+        "action": "AdjustGig",
+        "target": {
+          "from_binding": "gig",
+          "bind": "gig"
+        },
+        "amount": {
+          "op": "ref",
+          "name": "delta"
+        }
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "HasInZone",
+          "zone": "gigs",
+          "side": "self",
+          "filter": {
+            "value": {
+              "op": "gig_value",
+              "ref": "gig"
+            }
+          }
+        },
+        "then": [
+          {
+            "action": "Draw",
+            "n": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "016",
+    "onPlay": [
+      {
+        "action": "If",
+        "cond": {
+          "cond": "Compare",
+          "lhs":  { "op": "street_cred", "side": "self" },
+          "op":   ">",
+          "rhs":  { "op": "street_cred", "side": "opponent" }
+        },
+        "then": [
+          {
+            "action": "Defeat",
+            "target": {
+              "type": "Unit",
+              "side": "opponent",
+              "chooser": "controller",
+              "filter": { "power_lte": 3 },
+              "prompt": "Defeat a rival unit (power ≤ 3)"
+            }
+          }
+        ],
+        "else": [
+          {
+            "action": "Defeat",
+            "target": {
+              "type": "Unit",
+              "side": "opponent",
+              "chooser": "controller",
+              "filter": { "power_lte": 2 },
+              "prompt": "Defeat a rival unit (power ≤ 2)"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "030",
+    "playCostModifier": {
+      "discount": {
+        "op": "count",
+        "side": "self",
+        "zone": "gigs",
+        "filter": { "value_gte": 8 }
+      },
+      "min": 1
+    },
+    "onPlay": [
+      {
+        "action": "Defeat",
+        "target": {
+          "type": "Unit",
+          "side": "opponent",
+          "chooser": "controller",
+          "filter": { "power_lt_friendly_max": true },
+          "prompt": "Defeat a rival unit weaker than one of your units"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "088",
+    "statics": [
+      { "kind": "SelfKeyword", "keyword": "HASTE_VS_SPENT" }
+    ],
+    "onPlay": [
+      {
+        "action": "Spend",
+        "target": {
+          "bind": "targets",
+          "type": "Unit",
+          "side": "opponent",
+          "chooser": "controller",
+          "quantifier": "upto_n",
+          "n": { "op": "value_pair_count", "side": "self" },
+          "prompt": "Spend rival units (one per friendly value-pair)"
+        }
+      }
+    ]
+  },
+  {
+    "card_id": "101",
+    "onPlay": [
+      {
+        "action": "Optional",
+        "prompt": "Set a gig's value to another gig's value?",
+        "body": [
+          {
+            "action": "SelectTarget",
+            "target": {
+              "bind": "src",
+              "type": "Gig",
+              "side": "both",
+              "chooser": "controller",
+              "prompt": "Pick the gig whose value to copy FROM"
+            }
+          },
+          {
+            "action": "SetGigValue",
+            "target": {
+              "bind": "dst",
+              "type": "Gig",
+              "side": "both",
+              "chooser": "controller",
+              "prompt": "Pick the gig to set the value ON"
+            },
+            "amount": { "op": "gig_value", "ref": "src" }
+          },
+          {
+            "action": "If",
+            "cond": { "cond": "HasValuePair", "side": "self" },
+            "then": [ { "action": "Draw", "n": 1 } ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "131a",
+    "onPlay": [
+      {
+        "action": "GrantTempKeyword",
+        "target": {
+          "bind": "rival",
+          "type": "Unit",
+          "side": "opponent",
+          "chooser": "controller"
+        },
+        "keyword": "CANNOT_ATTACK",
+        "until": "controller_next_turn"
+      },
+      {
+        "action": "If",
+        "cond": {
+          "cond": "HasInZone",
+          "side": "self",
+          "zone": "gigs",
+          "filter": { "value": 1 }
+        },
+        "then": [
+          {
+            "action": "Optional",
+            "prompt": "Chrome Reverie: Call a Legend for free?",
+            "body": [
+              { "action": "CallLegend" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "118",
+    "onPlay": [
+      {
+        "action": "If",
+        "cond": {
+          "cond": "HasInZoneN",
+          "side": "self",
+          "zone": "hand",
+          "n": 2,
+          "filter": { "type": "Program" }
+        },
+        "then": [
+          {
+            "action": "Optional",
+            "prompt": "Maman Brigitte: discard 2 Programs to bottom-deck a rival unequipped Unit?",
+            "body": [
+              {
+                "action": "Discard",
+                "n": 1,
+                "target": {
+                  "bind": "p1",
+                  "type": "CardRef",
+                  "zone": "hand",
+                  "filter": { "type": "Program" },
+                  "chooser": "controller"
+                }
+              },
+              {
+                "action": "Discard",
+                "n": 1,
+                "target": {
+                  "bind": "p2",
+                  "type": "CardRef",
+                  "zone": "hand",
+                  "filter": { "type": "Program" },
+                  "chooser": "controller"
+                }
+              },
+              {
+                "action": "BottomDeckFromField",
+                "target": {
+                  "bind": "unit",
+                  "type": "Unit",
+                  "side": "opponent",
+                  "filter": { "gear_count": 0 },
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "064",
+    "abilities": [
+      {
+        "kind": "triggered",
+        "trigger": {
+          "event": "OnSpent",
+          "by": "host"
+        },
+        "effect": [
+          {
+            "action": "SelectTarget",
+            "target": {
+              "bind": "gig",
+              "type": "Gig",
+              "side": "both",
+              "chooser": "controller",
+              "prompt": "Zetatech Faceplate: choose a Gig"
+            }
+          },
+          {
+            "action": "ChooseAmount",
+            "bind_to": "delta",
+            "min": 0,
+            "max": 1,
+            "chooser": "controller",
+            "prompt": "Zetatech Faceplate: adjust by 0 or 1"
+          },
+          {
+            "action": "AdjustGig",
+            "target": { "from_binding": "gig" },
+            "amount": { "op": "ref", "name": "delta" }
+          },
+          {
+            "action": "If",
+            "cond": {
+              "cond": "DistinctGigValueCount",
+              "side": "self",
+              "op": ">=",
+              "value": 3
+            },
+            "then": [
+              { "action": "Draw", "n": 1 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "card_id": "045",
+    "onPlay": [
+      {
+        "action": "Optional",
+        "prompt": "Gilded Matón: defeat a friendly Gear to defeat a rival Unit (cost ≤3)?",
+        "body": [
+          {
+            "action": "DefeatGear",
+            "target": {
+              "bind": "g",
+              "type": "Gear",
+              "side": "friendly",
+              "chooser": "controller"
+            }
+          },
+          {
+            "action": "If",
+            "cond": { "cond": "BindingSet", "name": "g" },
+            "then": [
+              {
+                "action": "Defeat",
+                "target": {
+                  "bind": "u",
+                  "type": "Unit",
+                  "side": "opponent",
+                  "filter": { "cost_lte": 3 },
+                  "chooser": "controller"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
