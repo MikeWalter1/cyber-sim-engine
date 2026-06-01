@@ -169,6 +169,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-grad-norm", type=float, default=1.0, help="Gradient clipping norm.")
     parser.add_argument("--eval-interval", type=int, default=100, help="Evaluate every N training episodes. Use 0 to disable.")
     parser.add_argument("--eval-episodes", type=int, default=100, help="Episodes per evaluation pass.")
+    parser.add_argument("--eval-mode", default="both", choices=["deterministic", "stochastic", "both"], help="Evaluation mode used during training. deterministic = argmax, stochastic = sample, both = report both and select best by stochastic win rate.")
     parser.add_argument("--checkpoint-dir", default="rl/checkpoints", help="Checkpoint directory, relative to engine root unless absolute.")
     parser.add_argument("--checkpoint-name", default="masked_policy_latest.pt", help="Latest checkpoint filename.")
     parser.add_argument("--best-name", default="masked_policy_best.pt", help="Best checkpoint filename.")
@@ -199,11 +200,13 @@ def evaluate_policy(
     device: torch.device,
     episodes: int,
     base_seed: int,
+    deterministic: bool,
 ) -> Dict[str, Any]:
     opponent = make_agent(args.opponent)
     rng = random.Random(base_seed + 91_337)
     stats: Dict[str, Any] = {
         "episodes": episodes,
+        "mode": "deterministic" if deterministic else "stochastic",
         "trainPid": args.train_pid,
         "opponent": opponent.name,
         "wins": 0,
@@ -243,7 +246,7 @@ def evaluate_policy(
                             obs,
                             info.get("action_mask", []),
                             device=device,
-                            deterministic=True,
+                            deterministic=deterministic,
                         ).action_index)
                     else:
                         action_index = opponent.select_action(obs, info, rng)
@@ -283,6 +286,54 @@ def evaluate_policy(
     stats["avgTurns"] = round(stats["totalTurns"] / max(1, episodes), 2)
     stats["ok"] = stats["errors"] == 0
     return stats
+
+
+def evaluate_policy_suite(
+    *,
+    model: MaskedActorCritic,
+    args: argparse.Namespace,
+    engine_root: Path,
+    device: torch.device,
+    episodes: int,
+    base_seed: int,
+) -> Dict[str, Any]:
+    """Run one or both evaluation modes and return a stable result object."""
+    out: Dict[str, Any] = {}
+
+    if args.eval_mode in ("deterministic", "both"):
+        out["deterministic"] = evaluate_policy(
+            model=model,
+            args=args,
+            engine_root=engine_root,
+            device=device,
+            episodes=episodes,
+            base_seed=base_seed,
+            deterministic=True,
+        )
+
+    if args.eval_mode in ("stochastic", "both"):
+        out["stochastic"] = evaluate_policy(
+            model=model,
+            args=args,
+            engine_root=engine_root,
+            device=device,
+            episodes=episodes,
+            base_seed=base_seed + 50_000,
+            deterministic=False,
+        )
+
+    if args.eval_mode == "deterministic":
+        primary = out["deterministic"]
+    elif args.eval_mode == "stochastic":
+        primary = out["stochastic"]
+    else:
+        primary = out.get("stochastic") or out.get("deterministic") or {}
+
+    return {
+        "mode": args.eval_mode,
+        "primary": primary,
+        **out,
+    }
 
 
 def main() -> None:
@@ -441,7 +492,7 @@ def main() -> None:
                     batch_returns.clear()
 
                 if args.eval_interval > 0 and episode % args.eval_interval == 0:
-                    eval_stats = evaluate_policy(
+                    eval_stats = evaluate_policy_suite(
                         model=model,
                         args=args,
                         engine_root=engine_root,
@@ -450,7 +501,8 @@ def main() -> None:
                         base_seed=args.seed + 1_000_000 + episode,
                     )
                     stats["lastEval"] = eval_stats
-                    win_rate = float(eval_stats.get("winRate") or 0.0)
+                    primary_eval = eval_stats.get("primary") if isinstance(eval_stats, dict) else {}
+                    win_rate = float((primary_eval or {}).get("winRate") or 0.0)
                     if stats["bestEvalWinRate"] is None or win_rate > float(stats["bestEvalWinRate"]):
                         stats["bestEvalWinRate"] = win_rate
                         save_checkpoint(
@@ -462,6 +514,9 @@ def main() -> None:
                             args=vars(args),
                         )
 
+                    det_win = eval_stats.get("deterministic", {}).get("winRate") if isinstance(eval_stats, dict) else None
+                    sto_win = eval_stats.get("stochastic", {}).get("winRate") if isinstance(eval_stats, dict) else None
+
                     if args.progress_jsonl:
                         print(json.dumps({
                             "episode": episode,
@@ -472,10 +527,17 @@ def main() -> None:
                             "eval": eval_stats,
                         }, separators=(",", ":")), flush=True)
                     else:
+                        eval_bits = []
+                        if det_win is not None:
+                            eval_bits.append(f"eval_det={float(det_win):.3f}")
+                        if sto_win is not None:
+                            eval_bits.append(f"eval_sto={float(sto_win):.3f}")
+                        if not eval_bits:
+                            eval_bits.append(f"eval_win={win_rate:.3f}")
                         print(
                             f"episode {episode}/{args.episodes} "
                             f"recent_reward={sum(recent_rewards)/max(1,len(recent_rewards)):.3f} "
-                            f"eval_win={win_rate:.3f} "
+                            f"{' '.join(eval_bits)} "
                             f"loss={stats['lastLoss']}",
                             file=sys.stderr,
                             flush=True,
