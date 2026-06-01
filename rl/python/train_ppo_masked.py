@@ -62,6 +62,51 @@ def resolve_path(path_value: str, engine_root: Path) -> str:
     return str(p.resolve())
 
 
+def resolve_optional_path(path_value: Optional[str], engine_root: Path) -> Optional[Path]:
+    if not path_value:
+        return None
+    p = Path(path_value)
+    if not p.is_absolute():
+        p = engine_root / p
+    return p.resolve()
+
+
+def write_progress_event(progress_path: Optional[Path], event: Dict[str, Any]) -> None:
+    if progress_path is None:
+        return
+    progress_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = dict(event)
+    payload.setdefault("time", round(time.time(), 3))
+    with progress_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(payload, separators=(",", ":")) + "\n")
+
+
+def compact_update(update: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not isinstance(update, dict):
+        return None
+    keys = ["policyDecisions", "minibatchUpdates", "loss", "policyLoss", "valueLoss", "entropy", "approxKl", "clipFrac", "earlyStop"]
+    return {k: update.get(k) for k in keys if k in update}
+
+
+def compact_eval(eval_stats: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if not isinstance(eval_stats, dict):
+        return None
+    out: Dict[str, Any] = {"mode": eval_stats.get("mode")}
+    for key in ("primary", "deterministic", "stochastic"):
+        item = eval_stats.get(key)
+        if isinstance(item, dict):
+            out[key] = {
+                "ok": item.get("ok"),
+                "winRate": item.get("winRate"),
+                "wins": item.get("wins"),
+                "losses": item.get("losses"),
+                "errors": item.get("errors"),
+                "avgSteps": item.get("avgSteps"),
+                "avgTurns": item.get("avgTurns"),
+            }
+    return out
+
+
 def as_list(value: Any) -> List[Any]:
     if value is None:
         return []
@@ -167,6 +212,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--resume", default=None, help="Optional checkpoint path to resume model weights from.")
     parser.add_argument("--device", default="cpu", help="Torch device, e.g. cpu or cuda.")
     parser.add_argument("--progress-jsonl", action="store_true", help="Print progress as JSON lines instead of compact stderr updates.")
+    parser.add_argument("--progress-path", default=None, help="Optional JSONL file for durable training progress, relative to engine root unless absolute.")
+    parser.add_argument("--save-every", type=int, default=0, help="Also save numbered checkpoints every N episodes. Use 0 to disable.")
     return parser.parse_args()
 
 
@@ -436,6 +483,9 @@ def main() -> None:
         checkpoint_dir = engine_root / checkpoint_dir
     latest_path = checkpoint_dir / args.checkpoint_name
     best_path = checkpoint_dir / args.best_name
+    progress_path = resolve_optional_path(args.progress_path, engine_root)
+    if progress_path is not None and progress_path.exists():
+        progress_path.unlink()
 
     env: Optional[CyberSimGymEnv] = None
     start_time = time.time()
@@ -478,6 +528,19 @@ def main() -> None:
 
         stats["observationSize"] = observation_size
         stats["maxActions"] = args.max_actions
+        if progress_path is not None:
+            stats["progressPath"] = str(progress_path)
+        write_progress_event(progress_path, {
+            "event": "start",
+            "algorithm": "masked_ppo",
+            "episodes": args.episodes,
+            "seed": args.seed,
+            "trainPid": args.train_pid,
+            "opponent": args.opponent,
+            "observationSize": observation_size,
+            "maxActions": args.max_actions,
+            "args": vars(args),
+        })
 
         for episode in range(1, args.episodes + 1):
             episode_transitions: List[PpoTransition] = []
@@ -555,6 +618,21 @@ def main() -> None:
                     stats["minibatchUpdates"] += int(update_stats.get("minibatchUpdates", 0))
                     stats["lastUpdate"] = update_stats
                     buffer.clear()
+                    recent = sum(recent_rewards) / max(1, len(recent_rewards))
+                    write_progress_event(progress_path, {
+                        "event": "update",
+                        "episode": episode,
+                        "recentAvgReward": round(recent, 6),
+                        "trainWinRate": round(stats["wins"] / max(1, stats["wins"] + stats["losses"] + stats["noWinner"]), 6),
+                        "wins": stats["wins"],
+                        "losses": stats["losses"],
+                        "noWinner": stats["noWinner"],
+                        "ppoUpdates": stats["ppoUpdates"],
+                        "minibatchUpdates": stats["minibatchUpdates"],
+                        "policyActions": stats["policyActions"],
+                        "opponentActions": stats["opponentActions"],
+                        "update": compact_update(update_stats),
+                    })
 
                 if args.eval_interval > 0 and episode % args.eval_interval == 0:
                     eval_stats = evaluate_policy_suite(
@@ -566,6 +644,14 @@ def main() -> None:
                         base_seed=args.seed + 1_000_000 + episode,
                     )
                     stats["lastEval"] = eval_stats
+                    write_progress_event(progress_path, {
+                        "event": "eval",
+                        "episode": episode,
+                        "ppoUpdates": stats["ppoUpdates"],
+                        "trainWinRate": round(stats["wins"] / max(1, stats["wins"] + stats["losses"] + stats["noWinner"]), 6),
+                        "eval": compact_eval(eval_stats),
+                        "lastUpdate": compact_update(stats.get("lastUpdate")),
+                    })
                     primary_eval = eval_stats.get("primary") if isinstance(eval_stats, dict) else {}
                     win_rate = float((primary_eval or {}).get("winRate") or 0.0)
                     if stats["bestEvalWinRate"] is None or win_rate > float(stats["bestEvalWinRate"]):
@@ -605,12 +691,35 @@ def main() -> None:
 
                 if episode % max(1, args.rollout_episodes * 10) == 0 or episode == args.episodes:
                     save_checkpoint(latest_path, model, optimizer, episode=episode, stats=stats, args=vars(args))
+                    write_progress_event(progress_path, {
+                        "event": "checkpoint",
+                        "episode": episode,
+                        "path": str(latest_path),
+                        "kind": "latest",
+                    })
+
+                if args.save_every > 0 and episode % args.save_every == 0:
+                    numbered_path = checkpoint_dir / f"masked_ppo_ep{episode:07d}.pt"
+                    save_checkpoint(numbered_path, model, optimizer, episode=episode, stats=stats, args=vars(args))
+                    write_progress_event(progress_path, {
+                        "event": "checkpoint",
+                        "episode": episode,
+                        "path": str(numbered_path),
+                        "kind": "numbered",
+                    })
 
             except Exception as exc:
                 stats["errors"] += 1
                 stats["ok"] = False
                 if stats["firstError"] is None:
                     stats["firstError"] = {"episode": episode, "seed": episode_seed, "error": str(exc)}
+                write_progress_event(progress_path, {
+                    "event": "error",
+                    "episode": episode,
+                    "seed": episode_seed,
+                    "error": str(exc),
+                    "errors": stats["errors"],
+                })
                 continue
 
         save_checkpoint(latest_path, model, optimizer, episode=args.episodes, stats=stats, args=vars(args))
@@ -624,6 +733,19 @@ def main() -> None:
     stats["avgSteps"] = round(stats["totalSteps"] / max(1, played), 2)
     stats["avgTurns"] = round(stats["totalTurns"] / max(1, played), 2)
     stats["elapsedSec"] = round(time.time() - start_time, 2)
+    write_progress_event(progress_path, {
+        "event": "final",
+        "ok": stats.get("ok"),
+        "episodes": stats.get("episodes"),
+        "wins": stats.get("wins"),
+        "losses": stats.get("losses"),
+        "noWinner": stats.get("noWinner"),
+        "winRate": stats.get("winRate"),
+        "bestEvalWinRate": stats.get("bestEvalWinRate"),
+        "ppoUpdates": stats.get("ppoUpdates"),
+        "minibatchUpdates": stats.get("minibatchUpdates"),
+        "elapsedSec": stats.get("elapsedSec"),
+    })
     print(json.dumps(stats, indent=2))
 
 
